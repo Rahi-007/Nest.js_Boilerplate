@@ -1,19 +1,23 @@
-import { defineConfig } from '@mikro-orm/postgresql';
-import { User } from '../users/user.entity';
+import * as dotenv from "dotenv";
+import { defineConfig } from "@mikro-orm/postgresql";
+import { User } from "../auth/entites/user.entity";
+import { Table } from "../auth/entites/base.entity";
 
-
-const isProd = process.env.NODE_ENV === 'production';
-
+dotenv.config();
 
 export default defineConfig({
-entities: [User],
-dbName: undefined, // comes from URL
-clientUrl: process.env.DATABASE_URL,
-driverOptions: {},
-debug: !isProd,
-migrations: {
-tableName: 'mikro_orm_migrations',
-path: 'migrations',
-glob: '!(*.d).{js,ts}',
-},
+  clientUrl:
+    process.env.DATABASE_URL ||
+    "postgresql://postgres:root@localhost:5432/learn",
+  entities: [User, Table],
+  debug: false, // Disable debug logs
+  allowGlobalContext: true,
+  pool: {
+    min: 2,
+    max: 10,
+  },
+  seeder: {
+    path: "./src/config", // Path to the seeder files
+    defaultSeeder: "Seed", // Default seeder class name
+  },
 });

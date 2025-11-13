@@ -1,18 +1,18 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { MikroOrmModule } from '@mikro-orm/nestjs';
-import mikroOrmConfig from './config/mikro-orm.config';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
-import jwtConfig from './config/jwt.config';
-
+import { Module } from "@nestjs/common";
+import { AppController } from "./app.controller";
+import { AppService } from "./app.service";
+import { MikroOrmModule } from "@mikro-orm/nestjs";
+import mikroOrmConfig from "./config/mikro-orm.config";
+import { CustomJwtModule } from "./config/jwt/jwt.module";
+import { AuthModule } from "./auth/auth.module";
 
 @Module({
-imports: [
-ConfigModule.forRoot({ isGlobal: true, load: [jwtConfig] }),
-MikroOrmModule.forRootAsync({ useFactory: () => mikroOrmConfig }),
-UsersModule,
-AuthModule,
-],
+  imports: [
+    MikroOrmModule.forRoot(mikroOrmConfig),
+    CustomJwtModule,
+    AuthModule,
+  ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
