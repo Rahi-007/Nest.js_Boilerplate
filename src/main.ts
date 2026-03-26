@@ -30,9 +30,9 @@ async function bootstrap() {
 
     // Swagger configuration
     const config = new DocumentBuilder()
-      .setTitle("Learn Nest")
-      .setDescription("API documentation for learn Nest")
-      .setVersion("1.0")
+      .setTitle("FuelMap.bd")
+      .setDescription("API documentation for FuelMap.bd - Find nearby fuel stations in Bangladesh")
+      .setVersion("1.0.0")
       .addBearerAuth(
         {
           type: "http",

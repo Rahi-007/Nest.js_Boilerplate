@@ -7,8 +7,9 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsBoolean,
 } from "class-validator";
-import { BloodGroup, Gender, UserRole, UserStatus } from "src/utils/enums";
+import { BloodGroup, Gender, Role, UserStatus } from "../../utils/enums";
 
 export class CreateUserDto {
   @IsString()
@@ -16,8 +17,7 @@ export class CreateUserDto {
     description: "First Name",
     example: "John",
   })
-  @Transform(({ value }) => value?.trim())
-  firstName: string;
+  firstName!: string;
 
   @IsString()
   @IsOptional()
@@ -25,33 +25,32 @@ export class CreateUserDto {
     description: "Last Name",
     example: "Doe",
   })
-  @Transform(({ value }) => value?.trim())
   lastName?: string;
 
   @IsString()
-  @ApiProperty({
+  @IsOptional()
+  @ApiPropertyOptional({
     description: "Phone Number",
     example: "1234567890",
     maxLength: 24,
   })
-  phone: string;
+  @Transform(({ value }) => value?.trim())
+  phone?: string;
 
   @IsString()
-  @IsOptional()
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: "Email",
     example: "Wl1yS@example.com",
     maxLength: 64,
   })
-  email?: string;
+  email!: string;
 
   @IsString()
-  @IsOptional()
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: "Password",
     minLength: 8,
   })
-  password?: string;
+  password!: string;
 
   @IsString()
   @IsOptional()
@@ -59,76 +58,130 @@ export class CreateUserDto {
     description: "Address",
     example: "123 Main Street, USA",
   })
-  @Transform(({ value }) => value?.trim())
   address?: string;
 
-  @ApiPropertyOptional({ description: "Date of birth", example: "1990-01-01" })
-  @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => value?.trim())
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "Date of birth",
+    example: "1990-01-01"
+  })
   dob?: string;
 
+  @IsEnum(Gender)
+  @IsOptional()
   @ApiPropertyOptional({
     description: "Gender of User",
     example: Gender.Male,
     enum: Gender,
   })
-  @IsOptional()
-  @IsEnum(Gender)
   gender?: Gender;
 
+  @IsEnum(BloodGroup)
+  @IsOptional()
   @ApiPropertyOptional({
     description: "Blood group of User",
     example: BloodGroup.O_POS,
     enum: BloodGroup,
   })
-  @IsOptional()
-  @IsEnum(BloodGroup)
   bloodGroup?: BloodGroup;
 
+  @IsEnum(Role)
+  @IsOptional()
   @ApiPropertyOptional({
     description: "Role of User",
-    example: UserRole.USER,
-    enum: UserRole,
+    example: Role.USER,
+    enum: Role,
   })
+  role?: Role;
+
+  @IsString()
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @ApiPropertyOptional({
+    description: "User Avatar URL",
+    example: "https://example.com/avatar.jpg",
+  })
+  avatar?: string;
+
+  @IsInt()
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "User trust score",
+    example: 0,
+  })
+  trustScore?: number;
+
+  @IsInt()
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "Total reports submitted by user",
+    example: 0,
+  })
+  totalReports?: number;
+
+  @IsInt()
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "Correct reports submitted by user",
+    example: 0,
+  })
+  correctReports?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "User verification status",
+    example: false,
+  })
+  isVerified?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiPropertyOptional({
+    description: "User blocked status",
+    example: false,
+  })
+  isBlocked?: boolean;
 }
 
-export class UpdateUserDto extends PartialType(CreateUserDto) {}
+export class UpdateUserDto extends PartialType(CreateUserDto) { }
 
-export class CustomerRes {
+export class UserRes {
   @Expose()
   @IsInt()
-  id: number;
+  id!: number;
 
   @Expose()
   @IsString()
-  firstName: string;
-
-  @Expose()
-  @IsString()
-  @IsOptional()
-  lastName: string;
-
-  @Expose()
-  @IsString()
-  phone: string;
+  firstName!: string;
 
   @Expose()
   @IsString()
   @IsOptional()
-  email: string;
+  lastName?: string;
 
   @Expose()
   @IsString()
   @IsOptional()
-  address: string;
+  phone?: string;
 
   @Expose()
+  @IsString()
+  email!: string;
+
+  @Expose()
+  @IsString()
   @IsOptional()
+  address?: string;
+
+  @Expose()
+  @IsString()
+  @IsOptional()
+  avatar?: string;
+
+  @Expose()
   @IsDate()
+  @IsOptional()
   dob?: Date;
 
   @Expose()
@@ -139,13 +192,44 @@ export class CustomerRes {
   @Expose()
   @IsString()
   @IsOptional()
-  bloodGroup: string;
+  bloodGroup!: string;
+
+  @Expose()
+  @IsBoolean()
+  isVerified!: boolean;
+
+  @Expose()
+  @IsBoolean()
+  isBlocked!: boolean;
 
   @Expose()
   @IsEnum(UserStatus)
-  status: UserStatus;
+  status!: UserStatus;
 
   @Expose()
-  @IsEnum(UserRole)
-  role: UserRole;
+  @IsEnum(Role)
+  role!: Role;
+
+  @Expose()
+  @IsInt()
+  @IsOptional()
+  trustScore?: number;
+
+  @Expose()
+  @IsInt()
+  @IsOptional()
+  totalReports?: number;
+
+  @Expose()
+  @IsInt()
+  @IsOptional()
+  correctReports?: number;
+
+  @Expose()
+  @IsDate()
+  createdAt!: Date;
+
+  @Expose()
+  @IsDate()
+  updatedAt!: Date;
 }

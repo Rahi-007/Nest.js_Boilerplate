@@ -2,12 +2,12 @@
 export enum Gender {
   Male = "male",
   Female = "female",
-  Other = "other",
 }
 
-// Enums for user roles
-export enum UserRole {
+// Enums for user role
+export enum Role {
   ADMIN = "admin",
+  MODERATOR = "moderator",
   USER = "user",
 }
 

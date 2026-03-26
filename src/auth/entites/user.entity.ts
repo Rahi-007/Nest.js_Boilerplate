@@ -1,42 +1,29 @@
-import { Table } from "./base.entity";
-import { Entity, Enum, Property } from "@mikro-orm/core";
-import { BloodGroup, Gender, UserRole, UserStatus } from "../../utils/enums";
+import { defineEntity, type InferEntity, p } from '@mikro-orm/core';
+import { BloodGroup, Gender, Role, UserStatus } from "../../utils/enums";
+import { BaseSchema } from "./base.entity";
 
-@Entity()
-export class User extends Table {
-  @Property({ length: 191, index: true })
-  firstName!: string;
+export const UserSchema = defineEntity({
+  name: 'User',
+  extends: BaseSchema,
+  properties: {
+    firstName: p.string().index().length(191),
+    lastName: p.string().nullable().length(191),
+    phone: p.string().unique().nullable().length(16),
+    avatar: p.string().nullable().length(191),
+    email: p.string().unique().length(64),
+    passHash: p.string().length(64),
+    address: p.string().nullable().length(64),
+    dob: p.datetime().nullable(),
+    gender: p.enum(() => Gender).nullable(),
+    bloodGroup: p.enum(() => BloodGroup).nullable(),
+    isVerified: p.boolean().default(false),
+    isBlocked: p.boolean().default(false),
+    status: p.enum(() => UserStatus).default(UserStatus.Active),
+    role: p.enum(() => Role).default(Role.USER),
+    trustScore: p.float().default(0).nullable(),
+    totalReports: p.integer().default(0).nullable(),
+    correctReports: p.integer().default(0).nullable(),
+  },
+});
 
-  @Property({ length: 191, nullable: true })
-  lastName?: string;
-
-  @Property({ length: 16, unique: true })
-  phone!: string;
-
-  // login
-  @Property({ length: 64, unique: true })
-  email!: string;
-
-  @Property({ length: 64 })
-  passHash!: string;
-
-  //optional
-  @Property({ length: 64, nullable: true })
-  address?: string;
-
-  @Property({ nullable: true, type: "datetime" })
-  dob?: Date;
-
-  @Enum({ items: () => Gender, nullable: true })
-  gender?: Gender;
-
-  @Enum({ items: () => BloodGroup, nullable: true })
-  bloodGroup?: BloodGroup;
-
-  // features
-  @Enum({ items: () => UserStatus, default: UserStatus.Active })
-  status?: UserStatus;
-
-  @Enum({ items: () => UserRole, default: UserRole.USER })
-  role!: UserRole;
-}
+export type IUser = InferEntity<typeof UserSchema>;
