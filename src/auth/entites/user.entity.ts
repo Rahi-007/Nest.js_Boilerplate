@@ -20,6 +20,7 @@ export const UserSchema = defineEntity({
     isBlocked: p.boolean().default(false),
     status: p.enum(() => UserStatus).default(UserStatus.Active),
     role: p.enum(() => Role).default(Role.USER),
+    lastLoggedIn: p.datetime().nullable(),
     trustScore: p.float().default(0).nullable(),
     totalReports: p.integer().default(0).nullable(),
     correctReports: p.integer().default(0).nullable(),

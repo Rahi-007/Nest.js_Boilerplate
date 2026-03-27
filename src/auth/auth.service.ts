@@ -19,10 +19,8 @@ export class AuthService {
     private readonly em: EntityManager,
   ) {}
 
-  /**
-   * Validate user credentials and generate tokens
-   */
-  async validateUser(loginDto: LoginDto): Promise<Omit<IUser, 'passHash'>> {
+  // User Login
+  async validateUser(loginDto: LoginDto): Promise<IUser>{
     // Find user by email
     const user = await this.em.findOne(UserSchema, { email: loginDto.email });
     
@@ -37,9 +35,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Return user without passHash, converting undefined to null for nullable fields
-    // const { passHash, ...result } = user;
-    return user as Omit<IUser, 'passHash'>;
+    user.lastLoggedIn = new Date();
+    await this.em.flush();
+
+    return user;
   }
 
   /**
@@ -199,5 +198,11 @@ export class AuthService {
     const user = await this.findOne(id);
     await this.em.remove(user);
     await this.em.flush();
+  }
+
+  async updateLastLoggedIn(user: IUser): Promise<IUser> {
+    user.lastLoggedIn = new Date();
+    await this.em.flush();
+    return user;
   }
 }

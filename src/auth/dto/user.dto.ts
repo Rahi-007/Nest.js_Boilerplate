@@ -185,6 +185,11 @@ export class UserRes {
   dob?: Date;
 
   @Expose()
+  @IsDate()
+  @IsOptional()
+  lastLoggedIn?: Date;
+
+  @Expose()
   @IsString()
   @IsOptional()
   gender?: string;
@@ -201,10 +206,6 @@ export class UserRes {
   @Expose()
   @IsBoolean()
   isBlocked!: boolean;
-
-  @Expose()
-  @IsEnum(UserStatus)
-  status!: UserStatus;
 
   @Expose()
   @IsEnum(Role)
