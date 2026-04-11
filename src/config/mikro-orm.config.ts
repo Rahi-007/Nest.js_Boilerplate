@@ -1,11 +1,11 @@
 import * as dotenv from "dotenv";
 import { defineConfig } from "@mikro-orm/postgresql";
-import { UserSchema } from "../auth/entites/user.entity";
+import { UserSchema } from "../auth/entity/user.entity";
 
 dotenv.config();
 
 export default defineConfig({
-  clientUrl: process.env.DATABASE_URL || "postgresql://postgres:root@localhost:5432/fuel",
+  clientUrl: process.env.DATABASE_URL,
   entities: [UserSchema],
   debug: false,
   allowGlobalContext: true,
@@ -18,11 +18,10 @@ export default defineConfig({
     defaultSeeder: "Seed",
   },
   driverOptions: {
-    // Only add SSL if using production / cloud DB
-    ssl:
-      process.env.NODE_ENV === 'production' ||
-        process.env.DATABASE_URL?.includes('neon.tech')
-        ? { rejectUnauthorized: false }
-        : false,
+    connection: {
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    },
   },
 });

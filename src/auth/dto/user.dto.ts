@@ -103,30 +103,6 @@ export class CreateUserDto {
   })
   avatar?: string;
 
-  @IsInt()
-  @IsOptional()
-  @ApiPropertyOptional({
-    description: "User trust score",
-    example: 0,
-  })
-  trustScore?: number;
-
-  @IsInt()
-  @IsOptional()
-  @ApiPropertyOptional({
-    description: "Total reports submitted by user",
-    example: 0,
-  })
-  totalReports?: number;
-
-  @IsInt()
-  @IsOptional()
-  @ApiPropertyOptional({
-    description: "Correct reports submitted by user",
-    example: 0,
-  })
-  correctReports?: number;
-
   @IsBoolean()
   @IsOptional()
   @ApiPropertyOptional({
@@ -210,21 +186,6 @@ export class UserRes {
   @Expose()
   @IsEnum(Role)
   role!: Role;
-
-  @Expose()
-  @IsInt()
-  @IsOptional()
-  trustScore?: number;
-
-  @Expose()
-  @IsInt()
-  @IsOptional()
-  totalReports?: number;
-
-  @Expose()
-  @IsInt()
-  @IsOptional()
-  correctReports?: number;
 
   @Expose()
   @IsDate()

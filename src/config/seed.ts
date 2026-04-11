@@ -1,9 +1,9 @@
-import mikroOrmConfig from "./mikro-orm.config";
-import { UserSchema } from "../auth/entites/user.entity";
-import { Role, UserStatus } from "../utils/enums";
-import * as bcrypt from "bcrypt";
 import * as dotenv from "dotenv";
+import * as bcrypt from "bcryptjs";
+import mikroOrmConfig from "./mikro-orm.config";
 import { MikroORM } from "@mikro-orm/postgresql";
+import { UserSchema } from "../auth/entity/user.entity";
+import { Role } from "../utils/enums";
 
 // Load environment variables
 dotenv.config();
@@ -31,15 +31,13 @@ export async function runSeeding(refresh = true) {
     const em = orm.em.fork();
 
     if (refresh) {
-      // Create schema (fresh installation) - drops all data
-      await orm.schema.ensureDatabase();
-      await orm.schema.drop();
-      await orm.schema.create();
+      // For Neon, use schema refresh instead of drop/create
+      console.log("🔄 Resetting schema...");
+      await orm.schema.refreshDatabase();
       console.log("✅ Database schema created");
     } else {
       // Update schema (sync mode) - preserves existing data
-      await orm.schema.ensureDatabase();
-      await orm.schema.update();
+      await orm.schema.updateSchema();
       console.log("✅ Database schema synced");
     }
 
@@ -48,7 +46,9 @@ export async function runSeeding(refresh = true) {
 
     // Seed Admin User (only if not exists)
     console.log("👤 Seeding users...");
-    let adminUser = await em.findOne(UserSchema, { email: "admin@example.com" });
+    let adminUser = await em.findOne(UserSchema, {
+      email: "admin@example.com",
+    });
     if (!adminUser) {
       const hashedPassword = await bcrypt.hash("admin123", 12);
 
@@ -59,7 +59,10 @@ export async function runSeeding(refresh = true) {
         email: "admin@example.com",
         passHash: hashedPassword,
         role: Role.ADMIN,
-        status: UserStatus.Active,
+        isVerified: false,
+        isBlocked: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       await em.persist(adminUser).flush();
@@ -69,7 +72,9 @@ export async function runSeeding(refresh = true) {
     }
 
     // Seed Regular User (only if not exists)
-    let regularUser = await em.findOne(UserSchema, { email: "user@example.com" });
+    let regularUser = await em.findOne(UserSchema, {
+      email: "user@example.com",
+    });
     if (!regularUser) {
       const hashedPassword = await bcrypt.hash("user123", 12);
 
@@ -80,7 +85,10 @@ export async function runSeeding(refresh = true) {
         email: "user@example.com",
         passHash: hashedPassword,
         role: Role.USER,
-        status: UserStatus.Active,
+        isVerified: false,
+        isBlocked: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       await em.persist(regularUser).flush();
