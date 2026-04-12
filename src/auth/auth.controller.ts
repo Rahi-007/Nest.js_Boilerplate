@@ -75,79 +75,79 @@ export class AuthController {
     }
   }
 
-  @ApiBearerAuth("JWT-auth")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: "Get all users" })
-  @ApiResponse({
-    status: 200,
-    description: "Users retrieved successfully",
-    type: UserRes,
-    isArray: true,
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized (invalid or missing token)",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden (admin access required)",
-  })
-  @ApiResponse({ status: 500, description: "Internal server error" })
-  @HttpCode(HttpStatus.OK)
-  @Get("users")
-  async findAll(): Promise<UserRes[]> {
-    try {
-      const users = await this.authService.findAll();
-      return users.map((user) => this.buildUserResponse(user));
-    } catch (error) {
-      console.error("Fetch Users Error:", error);
+  // @ApiBearerAuth("JWT-auth")
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
+  // @ApiOperation({ summary: "Get all users" })
+  // @ApiResponse({
+  //   status: 200,
+  //   description: "Users retrieved successfully",
+  //   type: UserRes,
+  //   isArray: true,
+  // })
+  // @ApiResponse({
+  //   status: 401,
+  //   description: "Unauthorized (invalid or missing token)",
+  // })
+  // @ApiResponse({
+  //   status: 403,
+  //   description: "Forbidden (admin access required)",
+  // })
+  // @ApiResponse({ status: 500, description: "Internal server error" })
+  // @HttpCode(HttpStatus.OK)
+  // @Get("users")
+  // async findAll(): Promise<UserRes[]> {
+  //   try {
+  //     const users = await this.authService.findAll();
+  //     return users.map((user) => this.buildUserResponse(user));
+  //   } catch (error) {
+  //     console.error("Fetch Users Error:", error);
 
-      throw new InternalServerErrorException("Failed to fetch users");
-    }
-  }
+  //     throw new InternalServerErrorException("Failed to fetch users");
+  //   }
+  // }
 
   /**
    * Get user by ID
    */
-  @ApiOperation({ summary: "Get user by ID (public)" })
-  @ApiBearerAuth("JWT-auth")
-  @UseGuards(JwtAuthGuard)
-  @ApiResponse({
-    status: 200,
-    description: "User retrieved successfully",
-    type: UserRes,
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized (invalid or missing token)",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden (only owner or admin can access)",
-  })
-  @ApiResponse({ status: 404, description: "User not found" })
-  @ApiResponse({ status: 500, description: "Internal server error" })
-  @Get("users/:id")
-  async findOne(
-    @Param("id", ParseIntPipe) id: number,
-    @Request() req: { user?: { sub?: number; role?: Role } }
-  ): Promise<UserRes> {
-    try {
-      const isAdmin = req.user?.role === Role.ADMIN;
-      const isOwner = req.user?.sub === id;
-      if (!isAdmin && !isOwner) {
-        throw new ForbiddenException("You can only access your own profile");
-      }
-      const user = await this.authService.findOne(id);
-      return this.buildUserResponse(user);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException("Failed to fetch user");
-    }
-  }
+  // @ApiOperation({ summary: "Get user by ID (public)" })
+  // @ApiBearerAuth("JWT-auth")
+  // @UseGuards(JwtAuthGuard)
+  // @ApiResponse({
+  //   status: 200,
+  //   description: "User retrieved successfully",
+  //   type: UserRes,
+  // })
+  // @ApiResponse({
+  //   status: 401,
+  //   description: "Unauthorized (invalid or missing token)",
+  // })
+  // @ApiResponse({
+  //   status: 403,
+  //   description: "Forbidden (only owner or admin can access)",
+  // })
+  // @ApiResponse({ status: 404, description: "User not found" })
+  // @ApiResponse({ status: 500, description: "Internal server error" })
+  // @Get("users/:id")
+  // async findOne(
+  //   @Param("id", ParseIntPipe) id: number,
+  //   @Request() req: { user?: { sub?: number; role?: Role } }
+  // ): Promise<UserRes> {
+  //   try {
+  //     const isAdmin = req.user?.role === Role.ADMIN;
+  //     const isOwner = req.user?.sub === id;
+  //     if (!isAdmin && !isOwner) {
+  //       throw new ForbiddenException("You can only access your own profile");
+  //     }
+  //     const user = await this.authService.findOne(id);
+  //     return this.buildUserResponse(user);
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException("Failed to fetch user");
+  //   }
+  // }
 
   /**
    * Register a new user
@@ -194,76 +194,76 @@ export class AuthController {
   /**
    * Update an existing user
    */
-  @ApiOperation({ summary: "Update user by ID (owner or admin)" })
-  @ApiBearerAuth("JWT-auth")
-  @UseGuards(JwtAuthGuard)
-  @ApiResponse({
-    status: 200,
-    description: "User updated successfully",
-    type: UserRes,
-  })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized (invalid or missing token)",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden (only owner or admin can update)",
-  })
-  @ApiResponse({ status: 404, description: "User not found" })
-  @ApiResponse({ status: 409, description: "Email or phone already exists" })
-  @ApiResponse({ status: 500, description: "Internal server error" })
-  @Put("users/:id")
-  async update(
-    @Param("id", ParseIntPipe) id: number,
-    @Body() updateUserDto: UpdateUserDto,
-    @Request() req: { user?: { sub?: number; role?: Role } }
-  ): Promise<UserRes> {
-    try {
-      const isAdmin = req.user?.role === Role.ADMIN;
-      const isOwner = req.user?.sub === id;
-      if (!isAdmin && !isOwner) {
-        throw new ForbiddenException("You can only update your own profile");
-      }
-      const updatedUser = await this.authService.update(id, updateUserDto);
-      return this.buildUserResponse(updatedUser);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException("Failed to update user");
-    }
-  }
+  // @ApiOperation({ summary: "Update user by ID (owner or admin)" })
+  // @ApiBearerAuth("JWT-auth")
+  // @UseGuards(JwtAuthGuard)
+  // @ApiResponse({
+  //   status: 200,
+  //   description: "User updated successfully",
+  //   type: UserRes,
+  // })
+  // @ApiResponse({
+  //   status: 401,
+  //   description: "Unauthorized (invalid or missing token)",
+  // })
+  // @ApiResponse({
+  //   status: 403,
+  //   description: "Forbidden (only owner or admin can update)",
+  // })
+  // @ApiResponse({ status: 404, description: "User not found" })
+  // @ApiResponse({ status: 409, description: "Email or phone already exists" })
+  // @ApiResponse({ status: 500, description: "Internal server error" })
+  // @Put("users/:id")
+  // async update(
+  //   @Param("id", ParseIntPipe) id: number,
+  //   @Body() updateUserDto: UpdateUserDto,
+  //   @Request() req: { user?: { sub?: number; role?: Role } }
+  // ): Promise<UserRes> {
+  //   try {
+  //     const isAdmin = req.user?.role === Role.ADMIN;
+  //     const isOwner = req.user?.sub === id;
+  //     if (!isAdmin && !isOwner) {
+  //       throw new ForbiddenException("You can only update your own profile");
+  //     }
+  //     const updatedUser = await this.authService.update(id, updateUserDto);
+  //     return this.buildUserResponse(updatedUser);
+  //   } catch (error) {
+  //     if (error instanceof HttpException) {
+  //       throw error;
+  //     }
+  //     throw new InternalServerErrorException("Failed to update user");
+  //   }
+  // }
 
   /**
    * Delete a user
    */
-  @ApiBearerAuth("JWT-auth")
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  @ApiOperation({ summary: "Delete user by ID (admin only)" })
-  @ApiResponse({ status: 200, description: "User deleted successfully" })
-  @ApiResponse({
-    status: 401,
-    description: "Unauthorized (invalid or missing token)",
-  })
-  @ApiResponse({
-    status: 403,
-    description: "Forbidden (admin access required)",
-  })
-  @ApiResponse({ status: 404, description: "User not found" })
-  @ApiResponse({ status: 500, description: "Internal server error" })
-  @Delete("users/:id")
-  async remove(@Param("id", ParseIntPipe) id: number) {
-    try {
-      await this.authService.remove(id);
-      return { message: `User with ID ${id} deleted successfully` };
-    } catch (error) {
-      throw new Error(
-        `Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
-  }
+  // @ApiBearerAuth("JWT-auth")
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(Role.ADMIN)
+  // @ApiOperation({ summary: "Delete user by ID (admin only)" })
+  // @ApiResponse({ status: 200, description: "User deleted successfully" })
+  // @ApiResponse({
+  //   status: 401,
+  //   description: "Unauthorized (invalid or missing token)",
+  // })
+  // @ApiResponse({
+  //   status: 403,
+  //   description: "Forbidden (admin access required)",
+  // })
+  // @ApiResponse({ status: 404, description: "User not found" })
+  // @ApiResponse({ status: 500, description: "Internal server error" })
+  // @Delete("users/:id")
+  // async remove(@Param("id", ParseIntPipe) id: number) {
+  //   try {
+  //     await this.authService.remove(id);
+  //     return { message: `User with ID ${id} deleted successfully` };
+  //   } catch (error) {
+  //     throw new Error(
+  //       `Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`
+  //     );
+  //   }
+  // }
 
   private buildUserResponse(user: IUser): UserRes {
     return {
@@ -279,9 +279,6 @@ export class AuthController {
       gender: user.gender ?? "",
       bloodGroup: user.bloodGroup ?? "",
       avatar: user.avatar ?? "",
-      trustScore: user.trustScore ?? 0,
-      totalReports: user.totalReports ?? 0,
-      correctReports: user.correctReports ?? 0,
       isVerified: user.isVerified ?? false,
       isBlocked: user.isBlocked ?? false,
       createdAt: user.createdAt ?? undefined,

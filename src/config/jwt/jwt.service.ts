@@ -15,7 +15,7 @@ export class CustomJwtService {
   }
 
   async generateRefreshToken(payload: JwtPayload): Promise<string> {
-    return this.jwtService.sign(payload, { expiresIn: '7d' });
+    return this.jwtService.sign(payload, { expiresIn: "7d" });
   }
 
   async validateToken(token: string) {

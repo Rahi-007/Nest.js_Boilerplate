@@ -1,22 +1,16 @@
+import * as bcrypt from "bcryptjs";
 import {
   Injectable,
-  NotFoundException,
   ConflictException,
-  BadRequestException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { LoginDto } from "./dto/logIn.dto";
 import { EntityManager } from "@mikro-orm/core";
 import { UserSchema, IUser } from "./entity/user.entity";
-import { CreateUserDto, UpdateUserDto } from "./dto/user.dto";
-import { LoginDto } from "./dto/logIn.dto";
-import * as bcrypt from "bcrypt";
+import { CreateUserDto } from "./dto/user.dto";
 
 interface ICreateUserDto extends CreateUserDto {
   createdAt?: Date;
-}
-
-interface IUpdateUserDto extends UpdateUserDto {
-  updatedAt?: Date;
 }
 
 @Injectable()
@@ -48,27 +42,7 @@ export class AuthService {
     return user;
   }
 
-  /**
-   * Get all users
-   */
-  async findAll(): Promise<IUser[]> {
-    return this.em.find(UserSchema, {});
-  }
-
-  /**
-   * Get user by ID
-   */
-  async findOne(id: number): Promise<IUser> {
-    const user = await this.em.findOne(UserSchema, { id });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
-  }
-
-  /**
-   * Create a new user
-   */
+  // Create a new user
   async create(createUserDto: ICreateUserDto): Promise<IUser> {
     // Check if email already exists
     const existingEmail = await this.em.findOne(UserSchema, {
@@ -106,116 +80,13 @@ export class AuthService {
       gender: createUserDto.gender,
       bloodGroup: createUserDto.bloodGroup,
       role: createUserDto.role,
-      trustScore: createUserDto.trustScore || 0,
-      totalReports: createUserDto.totalReports || 0,
-      correctReports: createUserDto.correctReports || 0,
       isVerified: createUserDto.isVerified || false,
       isBlocked: createUserDto.isBlocked || false,
       createdAt: new Date(),
-    });
+    } as UserSchema);
 
     await this.em.flush();
-
     return user;
-  }
-
-  /**
-   * Update an existing user
-   */
-  async update(id: number, updateUserDto: IUpdateUserDto): Promise<IUser> {
-    const user = await this.findOne(id);
-
-    // Check if email is being changed and already exists for another user
-    if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existingEmail = await this.em.findOne(UserSchema, {
-        email: updateUserDto.email,
-      });
-      if (existingEmail && existingEmail.id !== id) {
-        throw new ConflictException("Email already exists");
-      }
-    }
-
-    // Check if phone is being changed and already exists for another user
-    if (updateUserDto.phone && updateUserDto.phone !== user.phone) {
-      const existingPhone = await this.em.findOne(UserSchema, {
-        phone: updateUserDto.phone,
-      });
-      if (existingPhone && existingPhone.id !== id) {
-        throw new ConflictException("Phone number already exists");
-      }
-    }
-
-    // Update only provided fields
-    if (updateUserDto.firstName !== undefined) {
-      user.firstName = updateUserDto.firstName;
-    }
-    if (updateUserDto.lastName !== undefined) {
-      user.lastName = updateUserDto.lastName;
-    }
-    if (updateUserDto.phone !== undefined) {
-      user.phone = updateUserDto.phone;
-    }
-    if (updateUserDto.email !== undefined) {
-      user.email = updateUserDto.email;
-    }
-    if (updateUserDto.password !== undefined) {
-      // Hash new password
-      const saltRounds = 10;
-      user.passHash = await bcrypt.hash(updateUserDto.password, saltRounds);
-    }
-    if (updateUserDto.address !== undefined) {
-      user.address = updateUserDto.address;
-    }
-    if (updateUserDto.dob !== undefined) {
-      user.dob = updateUserDto.dob ? new Date(updateUserDto.dob) : null;
-    }
-    if (updateUserDto.gender !== undefined) {
-      user.gender = updateUserDto.gender;
-    }
-    if (updateUserDto.bloodGroup !== undefined) {
-      user.bloodGroup = updateUserDto.bloodGroup;
-    }
-    if (updateUserDto.avatar !== undefined) {
-      user.avatar = updateUserDto.avatar;
-    }
-    if (updateUserDto.trustScore !== undefined) {
-      user.trustScore = updateUserDto.trustScore;
-    }
-    if (updateUserDto.totalReports !== undefined) {
-      user.totalReports = updateUserDto.totalReports;
-    }
-    if (updateUserDto.correctReports !== undefined) {
-      user.correctReports = updateUserDto.correctReports;
-    }
-    if (updateUserDto.isVerified !== undefined) {
-      user.isVerified = updateUserDto.isVerified;
-    }
-    if (updateUserDto.isBlocked !== undefined) {
-      user.isBlocked = updateUserDto.isBlocked;
-    }
-    if (updateUserDto.role !== undefined) {
-      user.role = updateUserDto.role;
-    }
-
-    // Update timestamp
-    user.updatedAt = new Date();
-
-    // if (updateUserDto. !== undefined) {
-    //   user.status = updateUserDto.status;
-    // }
-
-    await this.em.flush();
-
-    return user;
-  }
-
-  /**
-   * Delete a user
-   */
-  async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
-    await this.em.remove(user);
-    await this.em.flush();
   }
 
   async updateLastLoggedIn(user: IUser): Promise<IUser> {

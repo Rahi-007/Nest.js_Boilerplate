@@ -64,7 +64,7 @@ export class CreateUserDto {
   @IsOptional()
   @ApiPropertyOptional({
     description: "Date of birth",
-    example: "1990-01-01"
+    example: "1990-01-01",
   })
   dob?: string;
 
@@ -120,7 +120,7 @@ export class CreateUserDto {
   isBlocked?: boolean;
 }
 
-export class UpdateUserDto extends PartialType(CreateUserDto) { }
+export class UpdateUserDto extends PartialType(CreateUserDto) {}
 
 export class UserRes {
   @Expose()

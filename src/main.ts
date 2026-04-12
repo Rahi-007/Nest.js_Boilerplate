@@ -16,7 +16,7 @@ async function bootstrap() {
 
     // CORS configuration
     app.enableCors({
-      origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+      origin: process.env.CORS_ORIGIN,
       credentials: true,
     });
 
@@ -30,8 +30,8 @@ async function bootstrap() {
 
     // Swagger configuration
     const config = new DocumentBuilder()
-      .setTitle("FuelMap.bd")
-      .setDescription("API documentation for FuelMap.bd - Find nearby fuel stations in Bangladesh")
+      .setTitle("Nest.js Boilerplate")
+      .setDescription("API documentation for Nest.js Boilerplate by Rahi")
       .setVersion("1.0.0")
       .addBearerAuth(
         {

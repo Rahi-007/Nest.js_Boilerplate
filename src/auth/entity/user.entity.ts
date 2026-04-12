@@ -1,4 +1,4 @@
-import { Entity, Property, ManyToOne, OneToMany } from '@mikro-orm/core';
+import { Entity, Property, ManyToOne, OneToMany } from "@mikro-orm/core";
 import { BloodGroup, Gender, Role } from "../../utils/enums";
 import { BaseSchema } from "./base.entity";
 
@@ -28,10 +28,10 @@ export class UserSchema extends BaseSchema {
   @Property({ nullable: true })
   dob?: Date;
 
-  @Property({ type: 'string', nullable: true })
+  @Property({ type: "string", nullable: true })
   gender?: Gender;
 
-  @Property({ type: 'string', nullable: true })
+  @Property({ type: "string", nullable: true })
   bloodGroup?: BloodGroup;
 
   @Property({ default: false })
@@ -40,7 +40,7 @@ export class UserSchema extends BaseSchema {
   @Property({ default: false })
   isBlocked = false;
 
-  @Property({ type: 'string', default: Role.USER })
+  @Property({ type: "string", default: Role.USER })
   role!: Role;
 
   @Property({ nullable: true })
