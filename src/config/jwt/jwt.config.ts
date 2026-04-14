@@ -1,16 +1,18 @@
 import { JwtModuleOptions } from "@nestjs/jwt";
 import { StringValue } from "ms";
+import { ConfigurationService } from "../configuration";
 
-export const jwtConfig: JwtModuleOptions = {
-  secret: process.env.JWT_SECRET || "default_secret_key",
+// Factory functions using ConfigurationService
+export const jwtConfigFactory = (configService: ConfigurationService): JwtModuleOptions => ({
+  secret: configService.jwt.secret,
   signOptions: {
-    expiresIn: (process.env.JWT_EXPIRES_IN ?? "1d") as StringValue,
+    expiresIn: configService.jwt.expiresIn as StringValue,
   },
-};
+});
 
-export const jwtRefreshConfig: JwtModuleOptions = {
-  secret: process.env.JWT_REFRESH_SECRET || "default_refresh_secret_key",
+export const jwtRefreshConfigFactory = (configService: ConfigurationService): JwtModuleOptions => ({
+  secret: configService.jwt.refreshSecret,
   signOptions: {
-    expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? "7d") as StringValue,
+    expiresIn: configService.jwt.refreshExpiresIn as StringValue,
   },
-};
+});

@@ -1,16 +1,8 @@
 import * as bcrypt from "bcryptjs";
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from "@nestjs/common";
 import { EntityManager } from "@mikro-orm/core";
 import { UpdateUserDto } from "../auth/dto/user.dto";
 import { IUser, UserSchema } from "../auth/entity/user.entity";
-
-interface IUpdateUserDto extends UpdateUserDto {
-  updatedAt?: Date;
-}
 
 @Injectable()
 export class UserService {
@@ -31,7 +23,7 @@ export class UserService {
   }
 
   // Update an existing user
-  async update(id: number, updateUserDto: IUpdateUserDto): Promise<IUser> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<IUser> {
     const user = await this.findOne(id);
 
     // Check if email is being changed and already exists for another user

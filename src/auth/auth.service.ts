@@ -1,9 +1,5 @@
 import * as bcrypt from "bcryptjs";
-import {
-  Injectable,
-  ConflictException,
-  UnauthorizedException,
-} from "@nestjs/common";
+import { Injectable, ConflictException, UnauthorizedException } from "@nestjs/common";
 import { LoginDto } from "./dto/logIn.dto";
 import { EntityManager } from "@mikro-orm/core";
 import { UserSchema, IUser } from "./entity/user.entity";
@@ -27,10 +23,7 @@ export class AuthService {
     }
 
     // Compare password with hash
-    const isPasswordValid = await bcrypt.compare(
-      loginDto.password,
-      user.passHash
-    );
+    const isPasswordValid = await bcrypt.compare(loginDto.password, user.passHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException("Invalid credentials");
@@ -64,10 +57,7 @@ export class AuthService {
 
     // Hash password
     const saltRounds = 10;
-    const hashedPassword = await bcrypt.hash(
-      createUserDto.password,
-      saltRounds
-    );
+    const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
 
     const user = this.em.create(UserSchema, {
       firstName: createUserDto.firstName,

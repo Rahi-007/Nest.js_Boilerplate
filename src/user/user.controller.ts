@@ -21,7 +21,7 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { RolesGuard } from "../auth/guards/roles.guard";
 import { Roles } from "../auth/decorators/roles.decorator";
-import { IUser } from "../auth/entity/user.entity";
+import { buildUserResponse } from "../utils/user-response.util";
 
 @Controller("user")
 export class UserController {
@@ -51,7 +51,7 @@ export class UserController {
   async findAll(): Promise<UserRes[]> {
     try {
       const users = await this.userService.findAll();
-      return users.map((user) => this.buildUserResponse(user));
+      return users.map(user => buildUserResponse(user));
     } catch (error) {
       console.error("Fetch Users Error:", error);
 
@@ -81,10 +81,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: "User not found" })
   @ApiResponse({ status: 500, description: "Internal server error" })
   @Get(":id")
-  async findOne(
-    @Param("id", ParseIntPipe) id: number,
-    @Request() req: { user?: { sub?: number; role?: Role } }
-  ): Promise<UserRes> {
+  async findOne(@Param("id", ParseIntPipe) id: number, @Request() req: { user?: { sub?: number; role?: Role } }): Promise<UserRes> {
     try {
       const isAdmin = req.user?.role === Role.ADMIN;
       const isOwner = req.user?.sub === id;
@@ -92,7 +89,7 @@ export class UserController {
         throw new ForbiddenException("You can only access your own profile");
       }
       const user = await this.userService.findOne(id);
-      return this.buildUserResponse(user);
+      return buildUserResponse(user);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -136,7 +133,7 @@ export class UserController {
         throw new ForbiddenException("You can only update your own profile");
       }
       const updatedUser = await this.userService.update(id, updateUserDto);
-      return this.buildUserResponse(updatedUser);
+      return buildUserResponse(updatedUser);
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -169,30 +166,10 @@ export class UserController {
       await this.userService.remove(id);
       return { message: `User with ID ${id} deleted successfully` };
     } catch (error) {
-      throw new Error(
-        `Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(`Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
-  }
-
-  private buildUserResponse(user: IUser): UserRes {
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName ?? "",
-      email: user.email,
-      phone: user.phone ?? "",
-      address: user.address ?? "",
-      role: user.role,
-      dob: user.dob ?? undefined,
-      lastLoggedIn: user.lastLoggedIn ?? undefined,
-      gender: user.gender ?? "",
-      bloodGroup: user.bloodGroup ?? "",
-      avatar: user.avatar ?? "",
-      isVerified: user.isVerified ?? false,
-      isBlocked: user.isBlocked ?? false,
-      createdAt: user.createdAt ?? undefined,
-      updatedAt: user.updatedAt ?? undefined,
-    };
   }
 }

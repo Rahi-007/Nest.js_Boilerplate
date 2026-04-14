@@ -2,36 +2,30 @@ import {
   Controller,
   Post,
   Get,
-  Put,
-  Delete,
   Body,
-  Param,
   HttpCode,
   HttpStatus,
-  ParseIntPipe,
   UnauthorizedException,
   InternalServerErrorException,
-  ForbiddenException,
-  HttpException,
   UseGuards,
   Request,
 } from "@nestjs/common";
 import { CustomJwtService } from "../config/jwt/jwt.service";
 import { LoginDto, LoginResponseDto } from "./dto/logIn.dto";
 import { AuthService } from "./auth.service";
-import { CreateUserDto, UpdateUserDto, UserRes } from "./dto/user.dto";
-import { Role } from "../utils/enums";
+import { UserService } from "../user/user.service";
+import { CreateUserDto, UserRes } from "./dto/user.dto";
 import { ApiBearerAuth, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { Roles } from "./decorators/roles.decorator";
-import { RolesGuard } from "./guards/roles.guard";
 import { IUser } from "./entity/user.entity";
+import { buildUserResponse } from "../utils/user-response.util";
 
 @Controller("auth")
 export class AuthController {
   constructor(
     private readonly jwtService: CustomJwtService,
-    private readonly authService: AuthService
+    private readonly authService: AuthService,
+    private readonly userService: UserService
   ) {}
 
   // Login endpoint
@@ -55,12 +49,9 @@ export class AuthController {
         role: user.role,
       };
 
-      const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.generateToken(payload),
-        this.jwtService.generateRefreshToken(payload),
-      ]);
+      const [accessToken, refreshToken] = await Promise.all([this.jwtService.generateToken(payload), this.jwtService.generateRefreshToken(payload)]);
 
-      const userRes = this.buildUserResponse(user);
+      const userRes = buildUserResponse(user);
 
       return {
         accessToken,
@@ -75,80 +66,6 @@ export class AuthController {
     }
   }
 
-  // @ApiBearerAuth("JWT-auth")
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
-  // @ApiOperation({ summary: "Get all users" })
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "Users retrieved successfully",
-  //   type: UserRes,
-  //   isArray: true,
-  // })
-  // @ApiResponse({
-  //   status: 401,
-  //   description: "Unauthorized (invalid or missing token)",
-  // })
-  // @ApiResponse({
-  //   status: 403,
-  //   description: "Forbidden (admin access required)",
-  // })
-  // @ApiResponse({ status: 500, description: "Internal server error" })
-  // @HttpCode(HttpStatus.OK)
-  // @Get("users")
-  // async findAll(): Promise<UserRes[]> {
-  //   try {
-  //     const users = await this.authService.findAll();
-  //     return users.map((user) => this.buildUserResponse(user));
-  //   } catch (error) {
-  //     console.error("Fetch Users Error:", error);
-
-  //     throw new InternalServerErrorException("Failed to fetch users");
-  //   }
-  // }
-
-  /**
-   * Get user by ID
-   */
-  // @ApiOperation({ summary: "Get user by ID (public)" })
-  // @ApiBearerAuth("JWT-auth")
-  // @UseGuards(JwtAuthGuard)
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "User retrieved successfully",
-  //   type: UserRes,
-  // })
-  // @ApiResponse({
-  //   status: 401,
-  //   description: "Unauthorized (invalid or missing token)",
-  // })
-  // @ApiResponse({
-  //   status: 403,
-  //   description: "Forbidden (only owner or admin can access)",
-  // })
-  // @ApiResponse({ status: 404, description: "User not found" })
-  // @ApiResponse({ status: 500, description: "Internal server error" })
-  // @Get("users/:id")
-  // async findOne(
-  //   @Param("id", ParseIntPipe) id: number,
-  //   @Request() req: { user?: { sub?: number; role?: Role } }
-  // ): Promise<UserRes> {
-  //   try {
-  //     const isAdmin = req.user?.role === Role.ADMIN;
-  //     const isOwner = req.user?.sub === id;
-  //     if (!isAdmin && !isOwner) {
-  //       throw new ForbiddenException("You can only access your own profile");
-  //     }
-  //     const user = await this.authService.findOne(id);
-  //     return this.buildUserResponse(user);
-  //   } catch (error) {
-  //     if (error instanceof HttpException) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException("Failed to fetch user");
-  //   }
-  // }
-
   /**
    * Register a new user
    */
@@ -161,9 +78,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 409, description: "Email or phone already exists" })
   @ApiResponse({ status: 500, description: "Internal server error" })
-  async register(
-    @Body() createUserDto: CreateUserDto
-  ): Promise<LoginResponseDto> {
+  async register(@Body() createUserDto: CreateUserDto): Promise<LoginResponseDto> {
     try {
       const newUser = await this.authService.create(createUserDto);
       const loggedInUser = await this.authService.updateLastLoggedIn(newUser);
@@ -174,115 +89,106 @@ export class AuthController {
         role: loggedInUser.role,
       };
 
+      const [accessToken, refreshToken] = await Promise.all([this.jwtService.generateToken(payload), this.jwtService.generateRefreshToken(payload)]);
+
+      return {
+        accessToken,
+        refreshToken,
+        user: buildUserResponse(loggedInUser),
+      };
+    } catch (error) {
+      throw new Error(`Failed to register user: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  /**
+   * Get current user profile
+   */
+  @Get("profile")
+  @ApiBearerAuth("JWT-auth")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Get current user profile" })
+  @ApiResponse({
+    status: 200,
+    description: "Profile retrieved successfully",
+    type: UserRes,
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized (invalid or missing token)",
+  })
+  async getProfile(@Request() req: { user?: { sub?: number } }): Promise<UserRes> {
+    try {
+      const userId = req.user?.sub;
+      if (!userId) {
+        throw new UnauthorizedException("Invalid token");
+      }
+      const user = await this.userService.findOne(userId);
+      return buildUserResponse(user);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new InternalServerErrorException("Failed to fetch profile");
+    }
+  }
+
+  /**
+   * Logout user (client-side token invalidation)
+   */
+  @Post("logout")
+  @ApiBearerAuth("JWT-auth")
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Logout user (client-side)" })
+  @ApiResponse({ status: 200, description: "Logout successful" })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized (invalid or missing token)",
+  })
+  @HttpCode(HttpStatus.OK)
+  async logout(): Promise<{ message: string }> {
+    return {
+      message: "Logout successful. Please remove tokens on client side.",
+    };
+  }
+
+  /**
+   * Refresh access token
+   */
+  @Post("refresh")
+  @ApiOperation({ summary: "Refresh access token using refresh token" })
+  @ApiResponse({
+    status: 200,
+    description: "Token refreshed successfully",
+    type: LoginResponseDto,
+  })
+  @ApiResponse({ status: 401, description: "Invalid refresh token" })
+  async refresh(@Body() body: { refreshToken: string }): Promise<LoginResponseDto> {
+    try {
+      const payload = await this.jwtService.validateToken(body.refreshToken);
+      if (!payload) {
+        throw new UnauthorizedException("Invalid refresh token");
+      }
+      const user = await this.userService.findOne(payload.sub);
+
+      const newPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+      };
+
       const [accessToken, refreshToken] = await Promise.all([
-        this.jwtService.generateToken(payload),
-        this.jwtService.generateRefreshToken(payload),
+        this.jwtService.generateToken(newPayload),
+        this.jwtService.generateRefreshToken(newPayload),
       ]);
 
       return {
         accessToken,
         refreshToken,
-        user: this.buildUserResponse(loggedInUser),
+        user: buildUserResponse(user),
       };
     } catch (error) {
-      throw new Error(
-        `Failed to register user: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      throw new UnauthorizedException("Invalid refresh token");
     }
-  }
-
-  /**
-   * Update an existing user
-   */
-  // @ApiOperation({ summary: "Update user by ID (owner or admin)" })
-  // @ApiBearerAuth("JWT-auth")
-  // @UseGuards(JwtAuthGuard)
-  // @ApiResponse({
-  //   status: 200,
-  //   description: "User updated successfully",
-  //   type: UserRes,
-  // })
-  // @ApiResponse({
-  //   status: 401,
-  //   description: "Unauthorized (invalid or missing token)",
-  // })
-  // @ApiResponse({
-  //   status: 403,
-  //   description: "Forbidden (only owner or admin can update)",
-  // })
-  // @ApiResponse({ status: 404, description: "User not found" })
-  // @ApiResponse({ status: 409, description: "Email or phone already exists" })
-  // @ApiResponse({ status: 500, description: "Internal server error" })
-  // @Put("users/:id")
-  // async update(
-  //   @Param("id", ParseIntPipe) id: number,
-  //   @Body() updateUserDto: UpdateUserDto,
-  //   @Request() req: { user?: { sub?: number; role?: Role } }
-  // ): Promise<UserRes> {
-  //   try {
-  //     const isAdmin = req.user?.role === Role.ADMIN;
-  //     const isOwner = req.user?.sub === id;
-  //     if (!isAdmin && !isOwner) {
-  //       throw new ForbiddenException("You can only update your own profile");
-  //     }
-  //     const updatedUser = await this.authService.update(id, updateUserDto);
-  //     return this.buildUserResponse(updatedUser);
-  //   } catch (error) {
-  //     if (error instanceof HttpException) {
-  //       throw error;
-  //     }
-  //     throw new InternalServerErrorException("Failed to update user");
-  //   }
-  // }
-
-  /**
-   * Delete a user
-   */
-  // @ApiBearerAuth("JWT-auth")
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(Role.ADMIN)
-  // @ApiOperation({ summary: "Delete user by ID (admin only)" })
-  // @ApiResponse({ status: 200, description: "User deleted successfully" })
-  // @ApiResponse({
-  //   status: 401,
-  //   description: "Unauthorized (invalid or missing token)",
-  // })
-  // @ApiResponse({
-  //   status: 403,
-  //   description: "Forbidden (admin access required)",
-  // })
-  // @ApiResponse({ status: 404, description: "User not found" })
-  // @ApiResponse({ status: 500, description: "Internal server error" })
-  // @Delete("users/:id")
-  // async remove(@Param("id", ParseIntPipe) id: number) {
-  //   try {
-  //     await this.authService.remove(id);
-  //     return { message: `User with ID ${id} deleted successfully` };
-  //   } catch (error) {
-  //     throw new Error(
-  //       `Failed to delete user: ${error instanceof Error ? error.message : "Unknown error"}`
-  //     );
-  //   }
-  // }
-
-  private buildUserResponse(user: IUser): UserRes {
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName ?? "",
-      email: user.email,
-      phone: user.phone ?? "",
-      address: user.address ?? "",
-      role: user.role,
-      dob: user.dob ?? undefined,
-      lastLoggedIn: user.lastLoggedIn ?? undefined,
-      gender: user.gender ?? "",
-      bloodGroup: user.bloodGroup ?? "",
-      avatar: user.avatar ?? "",
-      isVerified: user.isVerified ?? false,
-      isBlocked: user.isBlocked ?? false,
-      createdAt: user.createdAt ?? undefined,
-      updatedAt: user.updatedAt ?? undefined,
-    };
   }
 }

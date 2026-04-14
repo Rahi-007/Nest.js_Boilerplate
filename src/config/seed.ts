@@ -1,6 +1,5 @@
 import * as dotenv from "dotenv";
 import * as bcrypt from "bcryptjs";
-import mikroOrmConfig from "./mikro-orm.config";
 import { MikroORM } from "@mikro-orm/postgresql";
 import { UserSchema } from "../auth/entity/user.entity";
 import { Role } from "../utils/enums";
@@ -22,9 +21,20 @@ export async function runSeeding(refresh = true) {
   try {
     // Connect to database silently
     orm = await MikroORM.init({
-      ...mikroOrmConfig,
+      clientUrl: process.env.DATABASE_URL,
+      entities: [UserSchema],
       debug: false, // Disable query logging
       logger: () => {}, // Disable all logging
+      allowGlobalContext: true,
+      pool: {
+        min: 2,
+        max: 10,
+      },
+      driverOptions: {
+        connection: {
+          ssl: true,
+        },
+      },
     });
     console.log("✅ Database connection established");
 
